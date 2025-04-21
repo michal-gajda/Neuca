@@ -6,4 +6,8 @@
   <Folder Name="/src/Domain/">
     <Project Path="src/Domain/Neuca.Domain.csproj" />
   </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/Domain.UnitTests/">
+    <Project Path="tests/Domain.UnitTests/Neuca.Domain.UnitTests.csproj" />
+  </Folder>
 </Solution>
