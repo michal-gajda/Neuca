@@ -19,8 +19,11 @@ public sealed class TicketServiceTests
     {
         var flightId = new FlightId("KLM12345BCA");
         var flightEntity = new FlightEntity(flightId, basePrice: 30, minimumPrice: 20, from: "Europe", to: "Africe", time: new TimeOnly(0, 0, 0), [DayOfWeek.Monday, DayOfWeek.Thursday,]);
-
         this.flightRepository.LoadAsync(flightId, Arg.Any<CancellationToken>()).Returns(flightEntity);
+
+        var baFlightId = new FlightId("BAW00015LHR");
+        var baFlightEntity = new FlightEntity(baFlightId, basePrice: 21, minimumPrice: 20, from: "London", to: "New York", time: new TimeOnly(10, 0, 0), [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday,]);
+        this.flightRepository.LoadAsync(baFlightId, Arg.Any<CancellationToken>()).Returns(baFlightEntity);
 
         this.ticketIdProvider.GetNextId().Returns(new TicketId(Guid.NewGuid()));
 
@@ -59,12 +62,12 @@ public sealed class TicketServiceTests
     }
 
     [TestMethod]
-    public async Task BuyTicketAsync_Should_SaveAsync_FlightTicketEntity()
+    public async Task BuyTicketAsync_Should_SaveAsync_FlightTicketEntity_With_No_Discount()
     {
         // Given
-        var ticketService = new TicketService([], this.flightRepository, this.flightTicketRepository, this.ticketIdProvider);
-        var tenant = new Tenant(Guid.NewGuid(), Group.A, new DateOnly(1978, 12, 20));
-        var flightId = new FlightId("KLM12345BCA");
+        var ticketService = new TicketService(this.discountPolicies, this.flightRepository, this.flightTicketRepository, this.ticketIdProvider);
+        var tenant = new Tenant(Guid.NewGuid(), Group.A, new DateOnly(1978, 4, 21));
+        var flightId = new FlightId("BAW00015LHR");
 
         // When
         await ticketService.BuyTicketAsync(tenant, flightId, new DateOnly(2025, 4, 21), CancellationToken.None);
@@ -73,7 +76,7 @@ public sealed class TicketServiceTests
 
         await flightTicketRepository
             .Received()
-            .SaveAsync(Arg.Is<FlightTicketEntity>(e => e.FlightId == flightId && e.Price == 30 && e.Discounts.Any() == false), Arg.Any<CancellationToken>());
+            .SaveAsync(Arg.Is<FlightTicketEntity>(e => e.FlightId == flightId && e.Price == 21 && e.Discounts.Any() == false), Arg.Any<CancellationToken>());
     }
 
     [TestMethod]
@@ -131,10 +134,10 @@ public sealed class TicketServiceTests
     }
 
     [TestMethod]
-    public async Task BuyTicketAsync_By_Tenant_Group_B_Should_SaveAsync_FlightTicketEntity_With_Only_Two_Discounts()
+    public async Task BuyTicketAsync_With_Tenant_Group_B_Should_SaveAsync_FlightTicketEntity_With_No_Discounts_Details()
     {
         // Given
-        var ticketService = new TicketService(this.discountPolicies.Append(new April2025DiscountPolicy()), this.flightRepository, this.flightTicketRepository, this.ticketIdProvider);
+        var ticketService = new TicketService(this.discountPolicies, this.flightRepository, this.flightTicketRepository, this.ticketIdProvider);
         var tenant = new Tenant(Guid.NewGuid(), Group.B, new DateOnly(1978, 4, 24));
         var flightId = new FlightId("KLM12345BCA");
 
